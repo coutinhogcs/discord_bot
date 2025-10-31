@@ -1,11 +1,13 @@
 # Jobot — Bot de Discord com Google AI (Gemini)
 
-Um bot de Discord focado em ajudar pessoas a encontrarem vagas de emprego no Brasil, dar dicas de currículo e compartilhar links úteis. Ele usa a API Google AI (Gemini) para gerar respostas e pode responder no canal diretamente ou via Webhook (opcional).
+Um bot de Discord focado em ajudar pessoas a encontrarem vagas de emprego no Brasil, dar dicas de currículo e compartilhar links úteis. Ele usa a API Google AI (Gemini) para gerar respostas e funciona **sem necessidade de Webhook**, respondendo diretamente em qualquer canal do servidor.
 
 ## ✨ Recursos
 - Persona configurada para temas de emprego (vagas, currículo, sites de carreira)
-- Comando de conversa por menção ao bot (padrão); opcionalmente pode ser alterado para prefixo
-- Envio da resposta no canal; Webhook opcional com fallback automático
+- Comandos de barra (Slash Commands): `/serb` para conversar e `/resetar` para limpar histórico
+- **Funciona sem Webhook** - responde diretamente no canal onde foi chamado
+- Disponível em todos os canais do servidor onde o bot está
+- Histórico de conversa individual por usuário (suporta múltiplos usuários simultaneamente)
 - Comando de moderação para limpar mensagens: `!limpar [quantidade|tudo]`
   - Requer permissões de administrador ou "Gerenciar Mensagens"
   - O bot também precisa de "Gerenciar Mensagens" no canal
@@ -34,17 +36,16 @@ py -m venv .venv
 ### 3) Configurar variáveis de ambiente
 Crie um arquivo `.env` na raiz do projeto com os campos abaixo. Não compartilhe suas chaves.
 ```env
-# Token do bot do Discord
+# Token do bot do Discord (OBRIGATÓRIO)
 DISCORD_BOT_TOKEN=coloque_seu_token_aqui
 
-# URL do Webhook (opcional). Se não definir, o bot responde no canal.
-DISCORD_WEBHOOK_URL=coloque_sua_url_de_webhook_ou_deixe_vazio
-
-# Chave da Google AI (Gemini)
+# Chave da Google AI (Gemini) (OBRIGATÓRIO)
 GOOGLE_API_KEY=coloque_sua_chave_aqui
-```
 
-> Dica: se não quiser usar Webhook, basta deixar `DISCORD_WEBHOOK_URL` vazio. O bot responderá usando `message.channel.send(...)`.
+# URL do Webhook (OPCIONAL - pode deixar vazio ou remover esta linha)
+# O bot funciona perfeitamente sem webhook, respondendo diretamente no canal
+DISCORD_WEBHOOK_URL=
+```
 
 ### 4) Executar
 ```bash
@@ -54,28 +55,31 @@ GOOGLE_API_KEY=coloque_sua_chave_aqui
 Você deve ver algo como: "Bot está logado como Jobot#XXXX e pronto para interagir como Agente Serb.".
 
 ## 💬 Como usar
-- Conversa: mencione o bot no canal e faça sua pergunta
-  - Ex.: `@Jobot Quais são os melhores sites de emprego?`
-- Resetar contexto: `!reset`
-- Limpar mensagens: `!limpar [quantidade|tudo]`
+- **Conversar com o bot**: Use o comando de barra `/serb` em qualquer canal
+  - Ex.: `/serb Quais são os melhores sites de emprego?`
+  - O bot responderá diretamente no canal onde você usou o comando
+- **Limpar seu histórico**: Use `/resetar` para apagar seu histórico de conversa com o bot
+- **Limpar mensagens do canal**: `!limpar [quantidade|tudo]` (apenas administradores)
   - `!limpar 25` apaga 25 mensagens recentes (+ a do comando)
   - `!limpar tudo` apaga todas as mensagens que a API do Discord permitir
 
 > Observação: o Discord não permite apagar em massa mensagens mais antigas que 14 dias.
 
 ## ⚙️ Detalhes técnicos
-- O bot cria um chat Gemini com `genai.Client().chats.create(...)` e mantém o histórico.
-- Envio por Webhook é assíncrono (aiohttp) e possui fallback: se ocorrer erro, a resposta é enviada diretamente no canal.
+- O bot cria um chat Gemini com `genai.Client().chats.create(...)` e mantém o histórico individual por usuário
+- **O bot funciona sem Webhook** - responde diretamente no canal usando `channel.send()`
+- Cada usuário tem seu próprio histórico de conversa (suporta múltiplos usuários simultaneamente)
+- Comandos de barra (Slash Commands) são sincronizados automaticamente na inicialização
 
 ## 🧪 Solução de problemas
-- 400 Bad Request no Webhook:
-  - Verifique se o Webhook não foi revogado e se pertence ao canal/threads corretos
-  - O conteúdo não pode ser vazio e tem limite de 2000 caracteres (o bot já divide)
-  - Se persistir, deixe `DISCORD_WEBHOOK_URL` vazio e use envio direto no canal
-- "Heartbeat blocked":
-  - O envio por Webhook é assíncrono para não travar o loop; use esta versão do código
-- ImportError de pacotes:
+- **Bot não responde**: Verifique se os comandos `/serb` e `/resetar` aparecem ao digitar `/` no Discord
+  - Se não aparecerem, aguarde alguns segundos após iniciar o bot (sincronização pode demorar)
+  - Certifique-se de que o bot tem permissão para "Enviar Mensagens" no canal
+- **"ImportError" de pacotes**:
   - Reinstale no `.venv`: `.\\.venv\\Scripts\\python -m pip install -r requirements.txt`
+- **Token inválido**:
+  - Verifique se `DISCORD_BOT_TOKEN` no `.env` está correto
+  - Certifique-se de que o Intent "Message Content" está ativado no Discord Developer Portal
 
 ## 🔐 Segurança
 - Nunca comite seu `.env` ou poste suas chaves publicamente
